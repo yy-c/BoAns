@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>答案之书</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* iOS 系统字体栈 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 动态弥散背景 */
+        .ambient-light {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #4F46E5; animation-delay: 0s; }
+        .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #C026D3; animation-delay: -5s; }
+        .blob-3 { top: 40%; left: 30%; width: 300px; height: 300px; background: #06B6D4; opacity: 0.4; animation-delay: -2s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 50px) scale(1.1); }
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 长按指纹动画 */
+        .fingerprint-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .fingerprint-container:active {
+            transform: scale(0.9);
+        }
+        
+        /* 进度环 */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.1s linear;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* 结果出现的弹簧动画 */
+        .pop-in {
+            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+        }
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 呼吸灯效果 */
+        .breathing {
+            animation: breathe 2s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { display: none; }
+        
+        /* 字体优化 */
+        .letter-spacing-1 {
+            letter-spacing: 1px;
+        }
+        
+        .leading-relaxed {
+            line-height: 1.6;
+        }
+        
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative">
+
+    <!-- 动态背景层 -->
+    <div class="ambient-light">
+        <div class="blob blob-1 rounded-full"></div>
+        <div class="blob blob-2 rounded-full"></div>
+        <div class="blob blob-3 rounded-full"></div>
+    </div>
+
+    <!-- 主界面容器 -->
+    <main class="relative z-10 w-full h-full max-w-md flex flex-col justify-between p-6 pb-12 safe-area-inset-bottom">
+        
+        <!-- 顶部标题 -->
+        <header class="text-center mt-8 opacity-90">
+            <div class="inline-block px-3 py-1 text-xs font-medium tracking-wide text-gray-200 mb-4">
+                THE BOOK OF ANSWERS
+            </div>
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+                答案之书
+            </h1>
+        </header>
+
+        <!-- 内容区域：卡片切换 -->
+        <div class="flex-1 flex items-center justify-center w-full my-6 relative">
+            
+            <!-- 状态1：提问页 -->
+            <div id="view-ask" class="w-full text-center transition-all duration-500 ease-out">
+                <div class="glass-card rounded-[2rem] p-8 w-full aspect-[4/5] flex flex-col items-center justify-center relative overflow-hidden group">
+                    <!-- 装饰性光泽 -->
+                    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                    
+                    <p class="text-xl text-white/80 font-medium mb-3">心中默念你的问题</p>
+                    <p class="text-base text-white/50 mb-12 leading-relaxed">问题越清晰，答案越准确</p>
+
+                    <!-- 交互区域 -->
+                    <div class="relative" id="touch-zone">
+                        <!-- SVG 进度环 -->
+                        <svg class="absolute top-0 left-0 w-[100px] h-[100px] pointer-events-none" width="100" height="100">
+                            <circle class="progress-ring__circle" stroke="rgba(255,255,255,0.2)" stroke-width="4" fill="transparent" r="46" cx="50" cy="50"></circle>
+                            <circle id="progress-bar" class="progress-ring__circle" stroke="#fff" stroke-width="4" fill="transparent" r="46" cx="50" cy="50" stroke-dasharray="289" stroke-dashoffset="289" stroke-linecap="round"></circle>
+                        </svg>
+                        
+                        <!-- 指纹图标 -->
+                        <div class="fingerprint-container rounded-full bg-white/5 border border-white/10 cursor-pointer backdrop-blur-sm">
+                            <i class="fas fa-fingerprint text-4xl text-white/70"></i>
+                        </div>
+                    </div>
+
+                    <p class="mt-6 text-sm text-white/40 tracking-wider uppercase letter-spacing-1" id="hint-text">长按感应</p>
+                </div>
+            </div>
+
+            <!-- 状态2：结果页 -->
+            <div id="view-result" class="hidden w-full text-center">
+                <div class="glass-card rounded-[2rem] p-8 w-full aspect-[4/5] flex flex-col items-center justify-between pop-in relative overflow-hidden">
+                    
+                    <!-- 顶部装饰 -->
+                    <div class="w-12 h-1 bg-white/20 rounded-full mx-auto"></div>
+
+                    <div class="flex-1 flex flex-col items-center justify-center w-full">
+                        <i class="fas fa-quote-left text-2xl text-white/20 mb-6 self-start"></i>
+                        
+                        <h2 id="answer-text" class="text-3xl md:text-4xl font-bold leading-snug bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/70 drop-shadow-sm">
+                            <!-- 答案区域 -->
+                        </h2>
+                        
+                        <i class="fas fa-quote-right text-2xl text-white/20 mt-6 self-end"></i>
+                    </div>
+
+                    <div class="w-full">
+                        <button onclick="resetApp()" class="w-full py-4 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white font-medium text-lg active:scale-95 transition-transform duration-200 shadow-lg">
+                            再问一次
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部版权/装饰 -->
+        <footer class="text-center">
+            <div class="w-32 h-1 bg-white/20 rounded-full mx-auto mb-2"></div>
+        </footer>
+    </main>
+
+    <script>
+        const answerDatabase = [
+            // 肯定类
+            "是的", "绝对是", "毫无疑问", "当然", "前景很好", "你会成功的", "值得一试", "放手去做", "结果会很棒", "这是个好机会",
+            "现在就是时候", "相信你的直觉", "这就是命运", "你会得到你想要的", "坚持下去", "一切都会好起来", "你会为此感到高兴",
+            "这正是你需要的", "别犹豫", "勇往直前", "你会得到支持", "这是一个明确的“是”", "你会惊喜的",
+            
+            // 否定类
+            "算了吧", "这不明智", "你需要停下来", "这不是个好主意", "别被诱惑", "现在不是时候", "保持现状",
+            
+            // 建议/行动类
+            "再等等", "你需要更多耐心", "问问你的朋友", "睡一觉再说", "专注于你自己", "改变你的视角", "你需要休息",
+            "别太在意", "顺其自然", "你需要计划", "别回头", "勇敢一点", "你需要帮助", "独自面对", "保持冷静",
+            "你需要冒险", "保守秘密", "你需要放手", "重新开始", "你需要学习", "别太贪心", "原谅自己", "你需要旅行", 
+            "整理你的思绪", "你需要锻炼",
+            
+            // 哲学/模糊类
+            "答案在你心中", "时间会证明一切", "这取决于你", "别担心未来", "活在当下", "这只是暂时的", "你会明白的",
+            "这不重要", "你需要寻找平衡", "别被表象迷惑", "你需要信任", "这是一次考验", "你会成长的", "你需要爱",
+            "别害怕改变", "你需要感恩", "你需要快乐", "你需要自由", "你需要和平", "你需要勇气", "你需要智慧",
+            
+            // 趣味/随机
+            "抛个硬币吧", "去喝杯水", "深呼吸", "数到十", "看看窗外", "笑一笑", "给家人打个电话", "吃顿好的",
+            "听首喜欢的歌", "整理房间", "写下来", "别想太多", "这是个秘密", "我不告诉你", "你猜",
+            "你需要拥抱", "你需要阳光", "你需要雨水", "你需要风", "你需要大地",
+            
+            // 其他
+            "也许吧", "很难说", "看情况", "如果你想的话", "为什么不呢", "试试看", "别怕", "你可以的",
+            "相信自己", "别放弃", "再试一次", "你会找到办法的", "这很简单", "这很有趣", "这很美", "看云，看羊，看看云羊"
+        ];
+
+        // 元素引用
+        const touchZone = document.getElementById('touch-zone');
+        const progressBar = document.getElementById('progress-bar');
+        const hintText = document.getElementById('hint-text');
+        const viewAsk = document.getElementById('view-ask');
+        const viewResult = document.getElementById('view-result');
+        const answerText = document.getElementById('answer-text');
+
+        // 状态变量
+        let isHolding = false;
+        let progress = 0;
+        let animationFrame;
+        const holdDuration = 1300; // 长按出结果
+        const circumference = 2 * Math.PI * 46; // 2 * pi * r (r=46)
+
+        // 初始化进度条
+        progressBar.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressBar.style.strokeDashoffset = circumference;
+
+        // 震动反馈
+        function triggerHaptic() {
+            if (navigator.vibrate) {
+                navigator.vibrate(15); // 轻微震动
+            }
+        }
+
+        function triggerSuccessHaptic() {
+            if (navigator.vibrate) {
+                navigator.vibrate([50, 30, 50]); // 成功震动模式
+            }
+        }
+
+        // 开始按压
+        function startHold(e) {
+            e.preventDefault(); // 防止移动端默认行为（如选中文本）
+            if (isHolding) return;
+            
+            isHolding = true;
+            touchZone.querySelector('.fingerprint-container').style.transform = 'scale(0.9)';
+            hintText.innerText = "感应中...";
+            hintText.classList.add('breathing');
+            
+            let startTime = Date.now();
+
+            function animate() {
+                if (!isHolding) return;
+                
+                const elapsed = Date.now() - startTime;
+                progress = Math.min(elapsed / holdDuration, 1);
+                
+                // 更新进度环
+                const offset = circumference - (progress * circumference);
+                progressBar.style.strokeDashoffset = offset;
+
+                if (progress < 1) {
+                    // 持续震动模拟（如果设备支持）
+                    if (elapsed % 200 < 20) triggerHaptic();
+                    animationFrame = requestAnimationFrame(animate);
+                } else {
+                    // 完成
+                    finishHold();
+                }
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // 结束按压（松手或移开）
+        function endHold() {
+            if (!isHolding) return;
+            
+            isHolding = false;
+            cancelAnimationFrame(animationFrame);
+            
+            // 回弹动画
+            touchZone.querySelector('.fingerprint-container').style.transform = 'scale(1)';
+            progressBar.style.transition = 'stroke-dashoffset 0.3s ease-out';
+            progressBar.style.strokeDashoffset = circumference;
+            
+            hintText.innerText = "长按感应";
+            hintText.classList.remove('breathing');
+            
+            // 重置 transition 以便下次线性增长
+            setTimeout(() => {
+                progressBar.style.transition = 'stroke-dashoffset 0.1s linear';
+            }, 300);
+        }
+
+        // 完成长按，显示结果
+        function finishHold() {
+            isHolding = false;
+            triggerSuccessHaptic();
+            
+            // 切换界面
+            viewAsk.style.opacity = '0';
+            viewAsk.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                viewAsk.classList.add('hidden');
+                viewResult.classList.remove('hidden');
+                
+                // 生成答案
+                const randomAnswer = answerDatabase[Math.floor(Math.random() * answerDatabase.length)];
+                answerText.innerText = randomAnswer;
+                
+            }, 300);
+        }
+
+        // 重置应用
+        function resetApp() {
+            viewResult.classList.add('hidden');
+            viewAsk.classList.remove('hidden');
+            
+            // 重置样式
+            viewAsk.style.opacity = '0';
+            viewAsk.style.transform = 'scale(0.95)';
+            
+            // 强制重绘
+            void viewAsk.offsetWidth;
+            
+            viewAsk.style.opacity = '1';
+            viewAsk.style.transform = 'scale(1)';
+            
+            // 重置进度条和提示文字
+            progressBar.style.strokeDashoffset = circumference;
+            hintText.innerText = "长按感应";
+            hintText.classList.remove('breathing');
+        }
+
+        // 事件监听 (同时支持鼠标和触摸)
+        const btn = touchZone;
+
+        btn.addEventListener('mousedown', startHold);
+        btn.addEventListener('touchstart', startHold);
+
+        btn.addEventListener('mouseup', endHold);
+        btn.addEventListener('mouseleave', endHold);
+        btn.addEventListener('touchend', endHold);
+        btn.addEventListener('touchcancel', endHold);
+
+        // 防止iOS双击缩放
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+    </script>
+
+
+</body></html>
